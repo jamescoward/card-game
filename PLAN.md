@@ -38,10 +38,11 @@
   - `Card` — name, cost, power, life, keywords, inkable, inkValue
   - `CreatureInstance` — card reference, current damage, exhausted state, lane position
   - `Player` — life, deck, hand, ink pool, lanes (3 slots), discard pile
-  - `GameState` — both players, current turn number, current phase, active player, inking mode
+  - `GameState` — both players, current turn number, current phase, active player, inking mode, combat mode
   - `Phase` enum — Draw, Ink, Play, Combat, End
   - `Keyword` enum — Cleave, Tide, Slow, Evasion, Tough, Rich
   - `InkingMode` enum — Persistent, Expendable
+  - `CombatMode` enum — MutualDamage, AttackerOnly
 - [ ] Create the starter card: Goblin (cost: 1, power: 1, life: 1, keywords: none, inkable: true)
 - [ ] Create two default 20-card deck configurations as JSON arrays in `src/data/decks.ts` (all Goblins for now)
 
@@ -52,7 +53,7 @@
   - `drawCard()` — draw phase logic, handle empty deck
   - `inkCard(cardIndex)` — remove card from hand, add ink (persistent mode: +1 permanent ink, expendable mode: +1 temporary ink). Respect Rich keyword (ink for 2). Enforce one-per-turn limit in persistent mode.
   - `playCard(cardIndex, lane)` — validate cost, deduct ink (persistent: deduct and refill each turn from pool; expendable: spend temporary ink), place creature, trigger on-play keywords (Cleave, Tide)
-  - `resolveCombat()` — simultaneous combat across all 3 lanes, apply damage to creatures and players, remove dead creatures, handle Evasion and Tough
+  - `resolveCombat()` — resolve combat across all 3 lanes based on active combat mode. **Mutual Damage mode:** simultaneous combat, both creatures deal damage to each other. **Attacker-Only mode:** only the active player's creatures deal damage, defenders do not strike back. In both modes: apply damage to creatures and players, remove dead creatures, handle Evasion and Tough.
   - `endTurn()` — advance to next player/turn, check win conditions (life <= 0, turn 6 limit)
   - `checkGameOver()` — return winner or null
 - [ ] Implement persistent inking: track `inkPool` (max available) and `inkUsed` (spent this turn). Reset `inkUsed` to 0 each turn.
@@ -61,7 +62,8 @@
   - Drawing cards
   - Inking a card (both modes)
   - Playing a creature into a lane
-  - Combat resolution (creature vs creature, creature vs face)
+  - Combat resolution — mutual damage mode (creature vs creature, creature vs face)
+  - Combat resolution — attacker-only mode (only attacker deals damage, defender does not strike back)
   - Win condition checks (life total, turn limit)
   - Rich keyword inking for 2
 
@@ -70,7 +72,8 @@
 - [ ] Build the HTML structure for a two-player hotseat layout:
   ```
   ┌──────────────────────────────────────────────────┐
-  │  [Inking Mode Toggle: Persistent / Expendable]   │
+  │  [Inking Mode: Persistent / Expendable]           │
+  │  [Combat Mode: Mutual Damage / Attacker-Only]    │
   ├────────────────────┬─────────────────────────────┤
   │    PLAYER 1        │        PLAYER 2             │
   │  Life: 12  Ink: 0  │  Life: 12  Ink: 0           │
@@ -90,6 +93,7 @@
 - [ ] Show current damage on creatures in lanes (e.g., "1/1 — 0 dmg" or a health bar)
 - [ ] Display current game phase prominently with clear indication of whose turn it is
 - [ ] Add inking mode toggle at the top of the screen (switches between Persistent and Expendable — only usable before the game starts or resets the game with confirmation)
+- [ ] Add combat mode toggle at the top of the screen (switches between Mutual Damage and Attacker-Only — same pre-game/reset restriction as inking toggle)
 
 ### Phase 5: UI — Player Interaction
 
@@ -169,5 +173,5 @@
 
 | Sprint | Phases | Deliverable |
 |--------|--------|-------------|
-| **1**  | 1–6    | Playable two-player hotseat game with Goblin cards, both inking modes, 3-lane combat, deployed to GitHub Pages |
+| **1**  | 1–6    | Playable two-player hotseat game with Goblin cards, both inking modes, both combat modes, 3-lane combat, deployed to GitHub Pages |
 | **2**  | 7–9    | All 6 keywords working, 15+ card pool, pre-built decks, deck selection, improved UI |

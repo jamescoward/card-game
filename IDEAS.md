@@ -4,6 +4,27 @@ Dumping ground for design ideas that aren't on the immediate roadmap.
 
 ---
 
+## Overwriting Creatures in a Lane
+
+Allow a player to play a creature into a lane that already contains one of their own creatures. The existing creature is destroyed (sent to discard) and replaced by the new one.
+
+**Why it's interesting:**
+- Prevents players getting locked out when they commit cheap early creatures to all 3 lanes
+- Makes early plays feel like tempo moves rather than permanent commitments
+- Creates a new decision: play a 1-drop now knowing you can replace it later, or hold it for inking?
+
+**Rules:**
+- Can only overwrite your own creatures, not the opponent's
+- Replaced creature is destroyed (sent to discard) — not returned to hand, which would have no downside
+- The new creature still costs ink as normal
+- On-play keywords (Cleave, Tide) still trigger for the new creature
+
+**Interactions to verify:**
+- Cleave still only destroys the opposing creature in the lane, not the overwritten one
+- Damaged creatures being overwritten don't heal — the new creature starts fresh
+
+---
+
 ## Spells
 
 A second card type with no lane presence. Spells are played from hand, cost ink, resolve immediately, and go to the discard pile.

@@ -169,6 +169,25 @@
 
 ---
 
+## Sprint 3 — Balance Fixes & Lane Overwriting
+
+**Goal:** Fix first-player advantage, rework Tough to be useful, and allow creatures to be replaced in lanes.
+
+### Phase 10: Balance Fixes & Lane Overwriting
+
+- [ ] **First player draw skip** — Player 1 does not draw on their very first turn. Reduces the inherent advantage of going first.
+- [ ] **Tough rework** — Change Tough from "takes 0 damage from creatures with strictly lower power" to "takes 0 damage from creatures with power strictly less than or equal to this creature's own power." This makes Sentinel (0/2) wall 0-power creatures and Bulwark (1/3) wall 1-power creatures, giving the keyword real defensive utility at low cost.
+  - Alternative worth considering: flat -1 damage reduction on all incoming hits (cleaner, more consistent feel).
+- [ ] **Lane overwriting** — Allow a player to play a creature into a lane already occupied by one of their own creatures. The existing creature is destroyed (sent to discard) and the new creature takes its place. On-play keywords still trigger normally.
+- [ ] Update unit tests to cover:
+  - Player 1 not drawing on turn 1
+  - Revised Tough behaviour
+  - Overwriting own creature (replaced creature goes to discard, new creature placed correctly)
+  - Overwriting does not affect the opposing creature in that lane
+  - Cannot overwrite the opponent's creatures
+
+---
+
 ## Future Ideas
 
 See [IDEAS.md](./IDEAS.md) for longer-term concepts that aren't yet on the roadmap.
@@ -181,3 +200,4 @@ See [IDEAS.md](./IDEAS.md) for longer-term concepts that aren't yet on the roadm
 |--------|--------|-------------|
 | **1**  | 1–6    | Playable two-player hotseat game with Goblin cards, both inking modes, both combat modes, 3-lane combat, deployed to GitHub Pages |
 | **2**  | 7–9    | All 6 keywords working, 15+ card pool, pre-built decks, deck selection, improved UI |
+| **3**  | 10     | Balance fixes (first-player draw, Tough rework) and lane overwriting |

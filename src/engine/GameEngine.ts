@@ -299,15 +299,6 @@ export class GameEngine {
       // (for the non-evasion attacker case, damage was already applied above)
     }
 
-    // Also resolve defender's creatures attacking (mutual combat is simultaneous)
-    for (let lane = 0; lane < 3; lane++) {
-      const defCreature = defender.lanes[lane];
-      const atkCreature = attacker.lanes[lane];
-
-      if (!defCreature || defCreature.exhausted) continue;
-      // Defenders only counter-attack when struck — they never deal face damage
-      // (Evasion is an offensive keyword and does not apply to defending creatures)
-    }
   }
 
   private resolveAttackerOnlyCombat(attacker: Player, defender: Player) {

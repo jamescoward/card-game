@@ -106,8 +106,6 @@ export class GameRenderer {
       const canPlay = s.currentPhase === Phase.Play && this.selectedCardIndex !== null && !isPendingTide;
       const p1Creature = p1.lanes[i];
       const p2Creature = p2.lanes[i];
-      const activePlayer = s.players[s.activePlayerIndex];
-      const isEmptyForActive = activePlayer.lanes[i] === null;
 
       lanesHtml += `
         <div class="lane">

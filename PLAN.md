@@ -169,36 +169,6 @@
 
 ---
 
-## Sprint 3 — Balance Fixes & Synergy Keywords
-
-**Goal:** Fix known balance issues and add new keywords that create meaningful deck-building synergies.
-
-### Phase 10: Balance Fixes
-
-- [ ] **First player draw skip** — Player 1 does not draw on their very first turn. Reduces the inherent advantage of going first.
-- [ ] **Tough rework** — Change Tough from "takes 0 damage from creatures with strictly lower power" to "takes 0 damage from creatures with power less than or equal to this creature's own power." This makes Sentinel (0/2) wall 0-power creatures and Bulwark (1/3) wall 1-power creatures, giving the keyword real defensive utility at low cost.
-  - Alternative worth considering: flat -1 damage reduction on all incoming hits (cleaner, more consistent feel).
-- [ ] Update unit tests to cover the revised Tough behaviour
-- [ ] Verify no unintended interactions with Evasion + Tough combinations
-
-### Phase 11: New Synergy Keywords
-
-New keywords designed to reward deliberate deck construction and create interactions between your own cards.
-
-- [ ] **Rally** — When another friendly creature enters play, this creature gets +1 power until end of turn. Rewards flooding the board; naturally pairs with cheap token-style creatures.
-- [ ] **Inspire** — When this creature deals damage (to a creature or face), give another target friendly creature +1/+1 permanently. Rewards keeping creatures alive to attack repeatedly.
-- [ ] **Pack** — This creature gets +1 power for each other friendly creature currently in play. Scales with board presence; synergises with wide strategies.
-- [ ] Add new cards to the pool for each new keyword (at least 2 cards per keyword at different costs)
-- [ ] Design at least one new pre-built deck that showcases the new keywords
-- [ ] Write unit tests for each new keyword:
-  - Rally triggering on a friendly play
-  - Rally not triggering on opponent's plays
-  - Inspire triggering on damage to face and to creatures
-  - Pack scaling with number of friendly creatures
-- [ ] Update UI to display and describe new keywords
-
----
-
 ## Future Ideas
 
 See [IDEAS.md](./IDEAS.md) for longer-term concepts that aren't yet on the roadmap.
@@ -211,4 +181,3 @@ See [IDEAS.md](./IDEAS.md) for longer-term concepts that aren't yet on the roadm
 |--------|--------|-------------|
 | **1**  | 1–6    | Playable two-player hotseat game with Goblin cards, both inking modes, both combat modes, 3-lane combat, deployed to GitHub Pages |
 | **2**  | 7–9    | All 6 keywords working, 15+ card pool, pre-built decks, deck selection, improved UI |
-| **3**  | 10–11  | Balance fixes (first-player draw, Tough rework) and new synergy keywords (Rally, Inspire, Pack) |

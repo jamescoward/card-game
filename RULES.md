@@ -66,12 +66,26 @@ Inspired by Lorcana's ink mechanic. Two modes are available for playtesting:
 
 ## Combat
 
+Two combat modes are available for playtesting:
+
+### Mutual Damage (Default)
+
 - During the Combat Phase, **all non-exhausted creatures attack simultaneously**.
 - A creature attacks the opposing creature in the same lane.
-  - If there is an opposing creature: both creatures deal their power as damage to each other.
+  - If there is an opposing creature: **both creatures deal their power as damage to each other**.
   - If the lane is empty: the creature deals its power as **damage to the opponent's life total**.
 - **Persistent health** — damage accumulates on creatures. A creature dies when its accumulated damage equals or exceeds its life.
 - Dead creatures are removed from the board immediately after combat resolves.
+
+### Attacker-Only Damage (Alternative)
+
+- During the Combat Phase, **all non-exhausted creatures belonging to the active player attack**.
+- Only the **active player's creatures deal damage** — defending creatures do not strike back.
+  - If there is an opposing creature: the attacking creature deals its power as damage to the defender. **The defender does not deal damage back.**
+  - If the lane is empty: the attacking creature deals its power as **damage to the opponent's life total**.
+- **Persistent health** — damage accumulates on creatures. A creature dies when its accumulated damage equals or exceeds its life.
+- Dead creatures are removed from the board immediately after combat resolves.
+- This mode makes **lane placement and turn order more strategic** — you can attack into a creature to soften it up without your creature taking a hit in return. Defending creatures only deal damage on their owner's turn.
 
 ## Summoning
 

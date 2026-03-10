@@ -46,9 +46,15 @@ describe('GameEngine', () => {
 
   describe('drawCard', () => {
     it('draws a card and moves to ink phase', () => {
+      // Turn 1 player 1 skips draw; advance to turn 2 to test normal draw
+      engine.drawCard(); engine.skipInk(); engine.endPlayPhase(); engine.resolveCombat(); engine.endTurn();
+      engine.drawCard(); engine.skipInk(); engine.endPlayPhase(); engine.resolveCombat(); engine.endTurn();
+      // Now turn 2, player 1
+      const handBefore = engine.state.players[0].hand.length;
+      const deckBefore = engine.state.players[0].deck.length;
       engine.drawCard();
-      expect(engine.state.players[0].hand).toHaveLength(6);
-      expect(engine.state.players[0].deck).toHaveLength(14);
+      expect(engine.state.players[0].hand).toHaveLength(handBefore + 1);
+      expect(engine.state.players[0].deck).toHaveLength(deckBefore - 1);
       expect(engine.state.currentPhase).toBe(Phase.Ink);
     });
 
@@ -71,9 +77,10 @@ describe('GameEngine', () => {
     });
 
     it('inks a card and increases ink pool', () => {
+      // Turn 1 player 1 skips draw (hand stays at 5), so after inking hand is 4
       expect(engine.inkCard(0)).toBe(true);
       expect(engine.state.players[0].inkPool).toBe(1);
-      expect(engine.state.players[0].hand).toHaveLength(5);
+      expect(engine.state.players[0].hand).toHaveLength(4);
     });
 
     it('enforces one-per-turn limit in persistent mode', () => {
@@ -143,11 +150,11 @@ describe('GameEngine', () => {
       expect(engine.state.players[0].lanes[0]).not.toBeNull();
     });
 
-    it('rejects play into occupied lane', () => {
+    it('allows overwriting own creature in occupied lane', () => {
       engine.playCard(0, 0);
       // Need more ink to play another
       engine.state.players[0].inkUsed = 0;
-      expect(engine.playCard(0, 0)).toBe(false);
+      expect(engine.playCard(0, 0)).toBe(true);
     });
 
     it('rejects play when not enough ink', () => {
@@ -479,7 +486,7 @@ describe('GameEngine', () => {
       expect(engine.state.players[1].lanes[0]!.damage).toBe(0); // Tough blocks 1 power
     });
 
-    it('takes full damage from equal or higher power', () => {
+    it('reduces damage by 1 from all attackers (minimum 0)', () => {
       engine.state.players[0].lanes[0] = {
         card: makeCard({ power: 3, life: 5 }),
         damage: 0,
@@ -491,7 +498,81 @@ describe('GameEngine', () => {
         exhausted: false,
       };
       engine.resolveCombat();
-      expect(engine.state.players[1].lanes[0]!.damage).toBe(3); // equal-or-higher power hits
+      expect(engine.state.players[1].lanes[0]!.damage).toBe(2); // 3 - 1 = 2
+    });
+  });
+
+  describe('Player 1 first-turn draw skip', () => {
+    it('player 1 does not draw on turn 1', () => {
+      // Player 1 starts turn 1 in Draw phase with 5 cards
+      expect(engine.state.currentTurn).toBe(1);
+      expect(engine.state.activePlayerIndex).toBe(0);
+      expect(engine.state.players[0].hand).toHaveLength(5);
+      engine.drawCard();
+      // Hand should still be 5 — no card drawn
+      expect(engine.state.players[0].hand).toHaveLength(5);
+      expect(engine.state.players[0].deck).toHaveLength(15);
+      expect(engine.state.currentPhase).toBe(Phase.Ink);
+    });
+
+    it('player 1 draws normally on turn 2+', () => {
+      // Advance to turn 2
+      engine.drawCard(); engine.skipInk(); engine.endPlayPhase(); engine.resolveCombat(); engine.endTurn();
+      engine.drawCard(); engine.skipInk(); engine.endPlayPhase(); engine.resolveCombat(); engine.endTurn();
+      expect(engine.state.currentTurn).toBe(2);
+      expect(engine.state.activePlayerIndex).toBe(0);
+      const handBefore = engine.state.players[0].hand.length;
+      engine.drawCard();
+      expect(engine.state.players[0].hand).toHaveLength(handBefore + 1);
+    });
+
+    it('player 2 draws normally on turn 1', () => {
+      // Finish player 1's turn
+      engine.drawCard(); engine.skipInk(); engine.endPlayPhase(); engine.resolveCombat(); engine.endTurn();
+      expect(engine.state.activePlayerIndex).toBe(1);
+      expect(engine.state.currentTurn).toBe(1);
+      const handBefore = engine.state.players[1].hand.length;
+      engine.drawCard();
+      expect(engine.state.players[1].hand).toHaveLength(handBefore + 1);
+    });
+  });
+
+  describe('lane overwriting', () => {
+    beforeEach(() => {
+      engine.drawCard();
+      engine.state.players[0].inkPool = 5;
+      engine.doneInking();
+    });
+
+    it('allows overwriting own creature — new creature is placed', () => {
+      engine.state.players[0].lanes[0] = { card: makeCard({ name: 'OldGuard' }), damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ name: 'NewGuard', cost: 1 });
+      expect(engine.playCard(0, 0)).toBe(true);
+      expect(engine.state.players[0].lanes[0]!.card.name).toBe('NewGuard');
+    });
+
+    it('discards the replaced creature', () => {
+      const oldCard = makeCard({ name: 'OldGuard' });
+      engine.state.players[0].lanes[0] = { card: oldCard, damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ name: 'NewGuard', cost: 1 });
+      engine.playCard(0, 0);
+      expect(engine.state.players[0].discard.some(c => c.name === 'OldGuard')).toBe(true);
+    });
+
+    it('overwriting still costs ink', () => {
+      engine.state.players[0].lanes[0] = { card: makeCard({ name: 'OldGuard' }), damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ name: 'NewGuard', cost: 2 });
+      engine.playCard(0, 0);
+      expect(engine.state.players[0].inkUsed).toBe(2);
+    });
+
+    it('Cleave still triggers when overwriting', () => {
+      engine.state.players[0].lanes[0] = { card: makeCard({ name: 'OldFriend' }), damage: 0, exhausted: false };
+      engine.state.players[1].lanes[0] = { card: makeCard({ name: 'EnemyTarget' }), damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ name: 'CleaveCard', cost: 1, keywords: [Keyword.Cleave] });
+      engine.playCard(0, 0);
+      expect(engine.state.players[0].lanes[0]!.card.name).toBe('CleaveCard');
+      expect(engine.state.players[1].lanes[0]).toBeNull();
     });
   });
 

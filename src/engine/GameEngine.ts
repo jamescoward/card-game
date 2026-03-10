@@ -87,6 +87,14 @@ export class GameEngine {
 
   drawCard(): boolean {
     if (this.state.currentPhase !== Phase.Draw) return false;
+
+    // Player 1 skips drawing on turn 1
+    if (this.state.currentTurn === 1 && this.state.activePlayerIndex === 0) {
+      this.state.currentPhase = Phase.Ink;
+      this.addLog('Player 1 skips draw on turn 1');
+      return true;
+    }
+
     const player = this.activePlayer;
     if (player.deck.length > 0) {
       const card = player.deck.pop()!;
@@ -155,7 +163,6 @@ export class GameEngine {
     const player = this.activePlayer;
     if (cardIndex < 0 || cardIndex >= player.hand.length) return false;
     if (lane < 0 || lane > 2) return false;
-    if (player.lanes[lane] !== null) return false;
 
     const card = player.hand[cardIndex];
     const available = this.getAvailableInk();
@@ -171,6 +178,14 @@ export class GameEngine {
     // Check for Tide targets before placing (Tide creature itself shouldn't count)
     const tideHasTargets = card.keywords.includes(Keyword.Tide) &&
       this.state.players.some(p => p.lanes.some(l => l !== null));
+
+    // If lane is occupied, discard the existing creature (overwrite)
+    if (player.lanes[lane] !== null) {
+      const replaced = player.lanes[lane]!;
+      this.addLog(`${replaced.card.name} in lane ${lane + 1} is discarded (overwritten by ${card.name})`);
+      player.discard.push(replaced.card);
+      player.lanes[lane] = null;
+    }
 
     // Remove from hand and place creature
     player.hand.splice(cardIndex, 1);
@@ -267,21 +282,21 @@ export class GameEngine {
         const atkPower = atkCreature.card.power;
         const defPower = defCreature.card.power;
 
-        // Tough check: takes no damage from lower power
+        // Tough check: takes 1 less damage (minimum 0)
         const defHasTough = defCreature.card.keywords.includes(Keyword.Tough);
         const atkHasTough = atkCreature.card.keywords.includes(Keyword.Tough);
 
-        if (!defHasTough || atkPower >= defCreature.card.power) {
-          defCreature.damage += atkPower;
-        } else {
-          this.addLog(`${defCreature.card.name} (Tough) ignores ${atkPower} damage from ${atkCreature.card.name}`);
+        const defDamage = defHasTough ? Math.max(0, atkPower - 1) : atkPower;
+        if (defHasTough && defDamage < atkPower) {
+          this.addLog(`${defCreature.card.name} (Tough) reduces damage from ${atkPower} to ${defDamage}`);
         }
+        defCreature.damage += defDamage;
 
-        if (!atkHasTough || defPower >= atkCreature.card.power) {
-          atkCreature.damage += defPower;
-        } else {
-          this.addLog(`${atkCreature.card.name} (Tough) ignores ${defPower} damage from ${defCreature.card.name}`);
+        const atkDamage = atkHasTough ? Math.max(0, defPower - 1) : defPower;
+        if (atkHasTough && atkDamage < defPower) {
+          this.addLog(`${atkCreature.card.name} (Tough) reduces damage from ${defPower} to ${atkDamage}`);
         }
+        atkCreature.damage += atkDamage;
 
         this.addLog(`Lane ${lane + 1}: ${atkCreature.card.name} and ${defCreature.card.name} trade blows`);
       } else if (defCreature && defCreature.exhausted) {
@@ -318,11 +333,11 @@ export class GameEngine {
         const atkPower = atkCreature.card.power;
         const defHasTough = defCreature.card.keywords.includes(Keyword.Tough);
 
-        if (!defHasTough || atkPower >= defCreature.card.power) {
-          defCreature.damage += atkPower;
-        } else {
-          this.addLog(`${defCreature.card.name} (Tough) ignores ${atkPower} damage from ${atkCreature.card.name}`);
+        const defDamage = defHasTough ? Math.max(0, atkPower - 1) : atkPower;
+        if (defHasTough && defDamage < atkPower) {
+          this.addLog(`${defCreature.card.name} (Tough) reduces damage from ${atkPower} to ${defDamage}`);
         }
+        defCreature.damage += defDamage;
         this.addLog(`Lane ${lane + 1}: ${atkCreature.card.name} attacks ${defCreature.card.name} (defender does not strike back)`);
       } else {
         defender.life -= atkCreature.card.power;

@@ -12,7 +12,7 @@ const KEYWORD_DESCRIPTIONS: Record<Keyword, string> = {
   [Keyword.Tide]: 'On play, return any creature on board to its owner\'s hand',
   [Keyword.Slow]: 'Enters exhausted — cannot attack the turn it is played',
   [Keyword.Evasion]: 'Always deals damage to opponent\'s life total; takes no damage from blockers',
-  [Keyword.Tough]: 'Takes no damage from creatures with strictly lower power',
+  [Keyword.Tough]: 'Takes 1 less damage from all incoming hits (minimum 0)',
   [Keyword.Rich]: 'Provides 2 ink instead of 1 when inked',
 };
 
@@ -121,7 +121,7 @@ export class GameRenderer {
               ${p2Creature ? this.renderCreature(p2Creature, 1, i, isPendingTide) : '<span class="empty-slot">Empty</span>'}
             </div>
           </div>
-          ${canPlay && isEmptyForActive ? `<button class="play-lane-btn" data-lane="${i}">Place Here</button>` : ''}
+          ${canPlay ? `<button class="play-lane-btn" data-lane="${i}">Place Here</button>` : ''}
         </div>
       `;
     }

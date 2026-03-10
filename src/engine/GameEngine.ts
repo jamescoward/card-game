@@ -311,12 +311,9 @@ export class GameEngine {
       if (hasEvasion) {
         attacker.life -= defCreature.card.power;
         this.addLog(`${defCreature.card.name} (Evasion) in lane ${lane + 1} deals ${defCreature.card.power} damage to opponent's life`);
-      } else if (!atkCreature) {
-        // Attacker has no creature in this lane — defender hits face
-        attacker.life -= defCreature.card.power;
-        this.addLog(`${defCreature.card.name} in lane ${lane + 1} deals ${defCreature.card.power} damage to opponent's life`);
       }
       // If both creatures exist and no evasion, damage was already handled above
+      // Defenders do NOT hit face when attacker's lane is empty — they only counter-attack
     }
   }
 

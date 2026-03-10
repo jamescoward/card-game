@@ -234,6 +234,19 @@ describe('GameEngine', () => {
       engine.resolveCombat();
       expect(engine.state.players[1].life).toBe(12);
     });
+
+    it('defending creature does not hit attacker face when attacker lane is empty', () => {
+      // Defender has a creature in lane 1, attacker has nothing there
+      engine.state.players[1].lanes[1] = {
+        card: makeCard({ power: 3, life: 3 }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.endPlayPhase();
+      engine.resolveCombat();
+      // Attacker's life should be unchanged — defenders only counter-attack, never hit face
+      expect(engine.state.players[0].life).toBe(12);
+    });
   });
 
   describe('combat — attacker-only mode', () => {

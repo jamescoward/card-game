@@ -4,6 +4,37 @@ Dumping ground for design ideas that aren't on the immediate roadmap.
 
 ---
 
+## Strategic Depth (Playtesting Observation)
+
+**Problem:** All decisions currently feel tactical and in-the-moment — players react to the current board state rather than planning ahead. There is no meaningful strategic layer.
+
+**Root cause:** The game has no carry-forward planning hooks. Each turn is self-contained: draw, ink, play, fight. Nothing you do now sets up a future turn in a way that requires forethought.
+
+**Candidate solutions:**
+
+- **Secondary win conditions** — e.g. controlling 2 of 3 lanes at end of turn earns a "dominance point"; first to 3 wins. Players now need to plan which lanes to commit to rather than just reacting to the board.
+- **Saving ink as a strategy** — if high-cost late-game threats are powerful enough to be worth waiting for, players face a real tension between spending ink now vs. holding for a big turn. Currently this tension is weak because the card pool tops out at 5-cost.
+- **Cards that set up future turns** — spells or creatures with delayed effects (e.g. "at the start of your next turn, draw 2") give players something to build toward rather than just responding.
+- **Hidden information** — if players can't see each other's hands, they have to plan around uncertainty rather than optimally reacting to perfect information.
+- **Pre/post-combat play** (see Second Play Step below) — adds some planning around combat ordering but is still largely tactical.
+
+---
+
+## Cleave Balance (Playtesting Observation)
+
+**Problem:** The aggro deck is dominant and Cleave is the main culprit. Cleave cards are doubly rewarding: they clear a lane on entry (removing the threat that would trade with them) and then deal uncontested damage because the lane is now empty. They also have high power stats, so even if they survive one turn they deal significant damage before dying.
+
+**Why Tide doesn't answer it:** Bouncing a Cleave creature is a negative trade — the opponent just replays it, triggers Cleave again, and gets another free damage turn. You've spent a Tide effect and they got two Cleave triggers.
+
+**Candidate fixes:**
+
+- **Remove the damage bonus** — Cleave creatures could have lower power stats to compensate for the guaranteed damage turn. The keyword is already strong as pure removal; high attack on top is too much.
+- **Cleave has Slow** — the creature enters exhausted, so it clears the lane but doesn't immediately attack. Gives the opponent a turn to respond before it deals damage.
+- **Cleave destroys but doesn't clear for damage** — the destroyed creature's "ghost" still blocks damage through to the player that turn (flavour: the fight still happened). Mechanically fiddly but nerfs the free damage window.
+- **Cleave costs extra** — add +1 to the cost of all Cleave cards. The effect is already a 2-for-1; the current costs don't reflect that.
+
+---
+
 ## Overwriting Creatures in a Lane
 
 Allow a player to play a creature into a lane that already contains one of their own creatures. The existing creature is destroyed (sent to discard) and replaced by the new one.

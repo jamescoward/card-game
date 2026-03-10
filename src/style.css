@@ -386,3 +386,195 @@ body {
   font-family: monospace;
   font-size: 0.75rem;
 }
+
+/* Keyword tags with tooltip */
+.keyword-tag {
+  display: inline-block;
+  background: #1e1e3a;
+  border: 1px solid #6c63ff;
+  border-radius: 3px;
+  padding: 0 4px;
+  font-size: 0.7rem;
+  color: #a89cff;
+  cursor: help;
+  margin: 1px;
+}
+
+.keyword-tag:hover {
+  background: #2e2e5a;
+  color: #d0caff;
+}
+
+/* Uninkable hand card */
+.hand-card.uninkable {
+  border-color: #553333;
+}
+
+.hand-card.uninkable .card-cost {
+  background: #553333;
+  color: #ff8888;
+}
+
+/* Rich label on hand cards */
+.card-rich-label {
+  font-size: 0.65rem;
+  color: #ffd700;
+  margin-top: 0.15rem;
+  font-weight: bold;
+}
+
+/* Tide banner */
+.tide-banner {
+  background: linear-gradient(135deg, #0d3b4f, #1a5f7a);
+  border: 2px solid #4fc3f7;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  color: #b3e5fc;
+  font-size: 1rem;
+  animation: tide-pulse 1.5s ease-in-out infinite;
+}
+
+.tide-icon {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+@keyframes tide-pulse {
+  0%, 100% { border-color: #4fc3f7; }
+  50% { border-color: #81d4fa; box-shadow: 0 0 12px #4fc3f740; }
+}
+
+/* Tide target creatures */
+.creature-card.tide-target {
+  border-color: #4fc3f7;
+  cursor: pointer;
+  animation: tide-glow 1.2s ease-in-out infinite;
+}
+
+.creature-card.tide-target:hover {
+  background: #1a3a4a;
+  border-color: #81d4fa;
+  transform: scale(1.05);
+}
+
+@keyframes tide-glow {
+  0%, 100% { box-shadow: 0 0 4px #4fc3f740; }
+  50% { box-shadow: 0 0 12px #4fc3f7aa; }
+}
+
+.tide-action-hint {
+  color: #4fc3f7;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.tide-hint {
+  color: #4fc3f7;
+}
+
+/* Setup screen */
+.setup-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem 1rem;
+}
+
+.setup-title {
+  font-size: 2rem;
+  color: #6c63ff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.setup-players {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  width: 100%;
+  max-width: 760px;
+}
+
+.setup-player {
+  flex: 1;
+  background: #16213e;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.setup-player h3 {
+  color: #6c63ff;
+  font-size: 1rem;
+}
+
+.setup-vs {
+  display: flex;
+  align-items: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #555;
+  padding-top: 2.5rem;
+}
+
+.deck-select, .mode-select {
+  width: 100%;
+  background: #2a2a4a;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.deck-select:focus, .mode-select:focus {
+  outline: none;
+  border-color: #6c63ff;
+}
+
+.deck-preview {
+  background: #1a1a2e;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  color: #888;
+  min-height: 60px;
+}
+
+.deck-preview-line {
+  padding: 1px 0;
+  border-bottom: 1px solid #222;
+}
+
+.setup-modes {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 760px;
+}
+
+.setup-mode {
+  flex: 1;
+  background: #16213e;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.setup-mode label {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.setup-start-btn {
+  font-size: 1.1rem;
+  padding: 0.75rem 3rem;
+  letter-spacing: 1px;
+}

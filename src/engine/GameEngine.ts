@@ -52,6 +52,7 @@ export class GameEngine {
       combatMode: combatMode,
       gameOver: false,
       winner: null,
+      pendingTide: false,
     };
   }
 
@@ -150,6 +151,7 @@ export class GameEngine {
 
   playCard(cardIndex: number, lane: number): boolean {
     if (this.state.currentPhase !== Phase.Play) return false;
+    if (this.state.pendingTide) return false;
     const player = this.activePlayer;
     if (cardIndex < 0 || cardIndex >= player.hand.length) return false;
     if (lane < 0 || lane > 2) return false;
@@ -166,6 +168,10 @@ export class GameEngine {
       player.temporaryInk -= card.cost;
     }
 
+    // Check for Tide targets before placing (Tide creature itself shouldn't count)
+    const tideHasTargets = card.keywords.includes(Keyword.Tide) &&
+      this.state.players.some(p => p.lanes.some(l => l !== null));
+
     // Remove from hand and place creature
     player.hand.splice(cardIndex, 1);
     const creature: CreatureInstance = {
@@ -177,17 +183,42 @@ export class GameEngine {
 
     this.addLog(`Played ${card.name} (${card.power}/${card.life}) into lane ${lane + 1}`);
 
-    // On-play keywords (Cleave, Tide) — Sprint 2 full implementation, but engine supports them
+    // On-play keywords
     if (card.keywords.includes(Keyword.Cleave)) {
       const opponent = this.inactivePlayer;
       if (opponent.lanes[lane] !== null) {
         const destroyed = opponent.lanes[lane]!;
-        this.addLog(`Cleave destroyed ${destroyed.card.name} in lane ${lane + 1}`);
+        this.addLog(`Cleave! ${card.name} destroyed ${destroyed.card.name} in lane ${lane + 1}`);
         opponent.discard.push(destroyed.card);
         opponent.lanes[lane] = null;
+      } else {
+        this.addLog(`Cleave: no opposing creature in lane ${lane + 1}`);
       }
     }
 
+    if (card.keywords.includes(Keyword.Tide)) {
+      if (tideHasTargets) {
+        this.state.pendingTide = true;
+        this.addLog(`Tide! Select any creature to return to its owner's hand`);
+      } else {
+        this.addLog(`Tide: no creatures on board to bounce`);
+      }
+    }
+
+    return true;
+  }
+
+  resolveTide(targetPlayerIndex: 0 | 1, lane: number): boolean {
+    if (!this.state.pendingTide) return false;
+    if (lane < 0 || lane > 2) return false;
+    const target = this.state.players[targetPlayerIndex];
+    const creature = target.lanes[lane];
+    if (!creature) return false;
+
+    target.lanes[lane] = null;
+    target.hand.push(creature.card);
+    this.addLog(`Tide returned ${creature.card.name} from lane ${lane + 1} to Player ${targetPlayerIndex + 1}'s hand`);
+    this.state.pendingTide = false;
     return true;
   }
 

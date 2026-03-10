@@ -302,6 +302,174 @@ describe('GameEngine', () => {
     });
   });
 
+  describe('Cleave keyword', () => {
+    beforeEach(() => {
+      engine.drawCard();
+      engine.state.players[0].inkPool = 5;
+      engine.doneInking();
+    });
+
+    it('destroys the opposing creature in the same lane on play', () => {
+      engine.state.players[1].lanes[0] = { card: makeCard({ name: 'Target' }), damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ keywords: [Keyword.Cleave], cost: 1 });
+      engine.playCard(0, 0);
+      expect(engine.state.players[1].lanes[0]).toBeNull();
+      expect(engine.state.players[1].discard).toHaveLength(1);
+    });
+
+    it('does nothing when opposing lane is empty (no-op)', () => {
+      engine.state.players[0].hand[0] = makeCard({ keywords: [Keyword.Cleave], cost: 1 });
+      engine.playCard(0, 0);
+      expect(engine.state.players[0].lanes[0]).not.toBeNull();
+      // No errors, no crash
+    });
+
+    it('does not affect other lanes', () => {
+      engine.state.players[1].lanes[1] = { card: makeCard({ name: 'Safe' }), damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ keywords: [Keyword.Cleave], cost: 1 });
+      engine.playCard(0, 0); // plays into lane 0
+      expect(engine.state.players[1].lanes[1]).not.toBeNull();
+    });
+  });
+
+  describe('Tide keyword', () => {
+    beforeEach(() => {
+      engine.drawCard();
+      engine.state.players[0].inkPool = 5;
+      engine.doneInking();
+    });
+
+    it('sets pendingTide when creatures exist on board', () => {
+      engine.state.players[1].lanes[0] = { card: makeCard({ name: 'Target' }), damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ keywords: [Keyword.Tide], cost: 1 });
+      engine.playCard(0, 0);
+      expect(engine.state.pendingTide).toBe(true);
+    });
+
+    it('does not set pendingTide when no creatures on board', () => {
+      engine.state.players[0].hand[0] = makeCard({ keywords: [Keyword.Tide], cost: 1 });
+      engine.playCard(0, 0);
+      expect(engine.state.pendingTide).toBe(false);
+    });
+
+    it('resolveTide bounces an opponent creature to their hand', () => {
+      const target = makeCard({ name: 'Bounced' });
+      engine.state.players[1].lanes[0] = { card: target, damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ keywords: [Keyword.Tide], cost: 1 });
+      engine.playCard(0, 0);
+      const handBefore = engine.state.players[1].hand.length;
+      engine.resolveTide(1, 0);
+      expect(engine.state.players[1].lanes[0]).toBeNull();
+      expect(engine.state.players[1].hand).toHaveLength(handBefore + 1);
+      expect(engine.state.pendingTide).toBe(false);
+    });
+
+    it('resolveTide bounces own creature to hand', () => {
+      engine.state.players[0].lanes[1] = { card: makeCard({ name: 'OwnCreature' }), damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ keywords: [Keyword.Tide], cost: 1 });
+      engine.playCard(0, 0); // plays into lane 0; pendingTide? only if creatures exist
+      expect(engine.state.pendingTide).toBe(true);
+      const handBefore = engine.state.players[0].hand.length;
+      engine.resolveTide(0, 1);
+      expect(engine.state.players[0].lanes[1]).toBeNull();
+      expect(engine.state.players[0].hand).toHaveLength(handBefore + 1);
+    });
+
+    it('resolveTide returns false when targeting empty lane', () => {
+      engine.state.players[1].lanes[0] = { card: makeCard(), damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ keywords: [Keyword.Tide], cost: 1 });
+      engine.playCard(0, 0);
+      expect(engine.resolveTide(1, 2)).toBe(false); // lane 2 is empty
+      expect(engine.state.pendingTide).toBe(true); // still pending
+    });
+
+    it('blocks card play while pendingTide is true', () => {
+      engine.state.players[1].lanes[0] = { card: makeCard(), damage: 0, exhausted: false };
+      engine.state.players[0].hand[0] = makeCard({ keywords: [Keyword.Tide], cost: 1 });
+      engine.playCard(0, 0);
+      expect(engine.state.pendingTide).toBe(true);
+      // Cannot play another card while Tide is pending
+      expect(engine.playCard(0, 1)).toBe(false);
+    });
+  });
+
+  describe('Evasion keyword', () => {
+    beforeEach(() => {
+      engine.drawCard();
+      engine.doneInking();
+      engine.endPlayPhase();
+    });
+
+    it('always deals damage to face even when blocker present', () => {
+      engine.state.players[0].lanes[0] = {
+        card: makeCard({ power: 2, life: 3, keywords: [Keyword.Evasion] }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.state.players[1].lanes[0] = {
+        card: makeCard({ power: 5, life: 5 }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.resolveCombat();
+      expect(engine.state.players[1].life).toBe(10); // 12 - 2
+      expect(engine.state.players[0].lanes[0]!.damage).toBe(0); // Evasion: takes no damage
+    });
+
+    it('evasion creature takes no damage from opposing creature', () => {
+      engine.state.players[0].lanes[0] = {
+        card: makeCard({ power: 1, life: 5, keywords: [Keyword.Evasion] }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.state.players[1].lanes[0] = {
+        card: makeCard({ power: 10, life: 5 }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.resolveCombat();
+      expect(engine.state.players[0].lanes[0]!.damage).toBe(0);
+    });
+  });
+
+  describe('Tough keyword', () => {
+    beforeEach(() => {
+      engine.drawCard();
+      engine.doneInking();
+      engine.endPlayPhase();
+    });
+
+    it('ignores damage from lower-power attackers', () => {
+      engine.state.players[0].lanes[0] = {
+        card: makeCard({ power: 1, life: 3 }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.state.players[1].lanes[0] = {
+        card: makeCard({ power: 3, life: 3, keywords: [Keyword.Tough] }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.resolveCombat();
+      expect(engine.state.players[1].lanes[0]!.damage).toBe(0); // Tough blocks 1 power
+    });
+
+    it('takes full damage from equal or higher power', () => {
+      engine.state.players[0].lanes[0] = {
+        card: makeCard({ power: 3, life: 5 }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.state.players[1].lanes[0] = {
+        card: makeCard({ power: 2, life: 5, keywords: [Keyword.Tough] }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.resolveCombat();
+      expect(engine.state.players[1].lanes[0]!.damage).toBe(3); // equal-or-higher power hits
+    });
+  });
+
   describe('endTurn', () => {
     it('switches active player', () => {
       engine.drawCard();

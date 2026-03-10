@@ -13,9 +13,7 @@ Dumping ground for design ideas that aren't on the immediate roadmap.
 **Candidate solutions:**
 
 - **Secondary win conditions** — e.g. controlling 2 of 3 lanes at end of turn earns a "dominance point"; first to 3 wins. Players now need to plan which lanes to commit to rather than just reacting to the board.
-- **Saving ink as a strategy** — if high-cost late-game threats are powerful enough to be worth waiting for, players face a real tension between spending ink now vs. holding for a big turn. Currently this tension is weak because the card pool tops out at 5-cost.
 - **Cards that set up future turns** — spells or creatures with delayed effects (e.g. "at the start of your next turn, draw 2") give players something to build toward rather than just responding.
-- **Hidden information** — if players can't see each other's hands, they have to plan around uncertainty rather than optimally reacting to perfect information.
 - **Pre/post-combat play** (see Second Play Step below) — adds some planning around combat ordering but is still largely tactical.
 
 ---
@@ -101,7 +99,6 @@ Draw → Ink → Play (pre-combat) → Combat → Play (post-combat) → End
 
 ## Other Keyword Ideas
 
-- **Haste** (inverse of Slow) — untaps at the end of the opponent's turn rather than your own; more aggressive recovery after being bounced/replayed
 - **Lifesteal** — damage this creature deals to the opponent heals you for the same amount; changes the aggro/control dynamic significantly
 - **Taunt** — opposing player must target this creature with Cleave or Tide effects before targeting other friendly creatures
-- **Echo** — when this creature dies, return a 1/1 token copy of it to your hand
+- **Echo** — when this creature dies, return a 1/1 token copy of it to your hand, or leave behind a 1/1 in the same spot

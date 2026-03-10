@@ -305,15 +305,8 @@ export class GameEngine {
       const atkCreature = attacker.lanes[lane];
 
       if (!defCreature || defCreature.exhausted) continue;
-
-      const hasEvasion = defCreature.card.keywords.includes(Keyword.Evasion);
-
-      if (hasEvasion) {
-        attacker.life -= defCreature.card.power;
-        this.addLog(`${defCreature.card.name} (Evasion) in lane ${lane + 1} deals ${defCreature.card.power} damage to opponent's life`);
-      }
-      // If both creatures exist and no evasion, damage was already handled above
-      // Defenders do NOT hit face when attacker's lane is empty — they only counter-attack
+      // Defenders only counter-attack when struck — they never deal face damage
+      // (Evasion is an offensive keyword and does not apply to defending creatures)
     }
   }
 

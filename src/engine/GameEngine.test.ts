@@ -443,6 +443,18 @@ describe('GameEngine', () => {
       engine.resolveCombat();
       expect(engine.state.players[0].lanes[0]!.damage).toBe(0);
     });
+
+    it('defending evasion creature does not deal face damage to attacking player', () => {
+      // Defender has an Evasion creature; attacker has no creature in that lane
+      engine.state.players[1].lanes[0] = {
+        card: makeCard({ power: 4, life: 4, keywords: [Keyword.Evasion] }),
+        damage: 0,
+        exhausted: false,
+      };
+      engine.resolveCombat();
+      // Evasion is an offensive keyword — defending creatures never deal face damage
+      expect(engine.state.players[0].life).toBe(12);
+    });
   });
 
   describe('Tough keyword', () => {

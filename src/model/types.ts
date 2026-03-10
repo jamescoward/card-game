@@ -62,6 +62,7 @@ export interface GameState {
   combatMode: CombatMode;
   gameOver: boolean;
   winner: 0 | 1 | null;
+  pendingTide: boolean;
 }
 
 export interface LogEntry {

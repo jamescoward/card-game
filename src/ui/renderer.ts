@@ -1,10 +1,20 @@
 import { GameEngine } from '../engine/GameEngine';
 import {
   Phase,
+  Keyword,
   InkingMode,
   CombatMode,
   CreatureInstance,
 } from '../model/types';
+
+const KEYWORD_DESCRIPTIONS: Record<Keyword, string> = {
+  [Keyword.Cleave]: 'On play, destroys the opposing creature in the same lane',
+  [Keyword.Tide]: 'On play, return any creature on board to its owner\'s hand',
+  [Keyword.Slow]: 'Enters exhausted — cannot attack the turn it is played',
+  [Keyword.Evasion]: 'Always deals damage to opponent\'s life total; takes no damage from blockers',
+  [Keyword.Tough]: 'Takes no damage from creatures with strictly lower power',
+  [Keyword.Rich]: 'Provides 2 ink instead of 1 when inked',
+};
 
 export class GameRenderer {
   private engine: GameEngine;
@@ -20,6 +30,7 @@ export class GameRenderer {
     this.app.innerHTML = `
       <div class="game-container">
         ${this.renderHeader()}
+        ${this.renderTideBanner()}
         ${this.renderBoard()}
         ${this.renderActiveHand()}
         ${this.renderActions()}
@@ -74,14 +85,25 @@ export class GameRenderer {
     `;
   }
 
+  private renderTideBanner(): string {
+    if (!this.engine.state.pendingTide) return '';
+    return `
+      <div class="tide-banner">
+        <span class="tide-icon">🌊</span>
+        <strong>Tide:</strong> Click any creature on the board to return it to its owner's hand
+      </div>
+    `;
+  }
+
   private renderBoard(): string {
     const s = this.engine.state;
     const p1 = s.players[0];
     const p2 = s.players[1];
+    const isPendingTide = s.pendingTide;
 
     let lanesHtml = '';
     for (let i = 0; i < 3; i++) {
-      const canPlay = s.currentPhase === Phase.Play && this.selectedCardIndex !== null;
+      const canPlay = s.currentPhase === Phase.Play && this.selectedCardIndex !== null && !isPendingTide;
       const p1Creature = p1.lanes[i];
       const p2Creature = p2.lanes[i];
       const activePlayer = s.players[s.activePlayerIndex];
@@ -92,11 +114,11 @@ export class GameRenderer {
           <div class="lane-label">Lane ${i + 1}</div>
           <div class="lane-slots">
             <div class="lane-slot p1-slot ${p1Creature ? '' : 'empty'}">
-              ${p1Creature ? this.renderCreature(p1Creature) : '<span class="empty-slot">Empty</span>'}
+              ${p1Creature ? this.renderCreature(p1Creature, 0, i, isPendingTide) : '<span class="empty-slot">Empty</span>'}
             </div>
             <div class="lane-divider">VS</div>
             <div class="lane-slot p2-slot ${p2Creature ? '' : 'empty'}">
-              ${p2Creature ? this.renderCreature(p2Creature) : '<span class="empty-slot">Empty</span>'}
+              ${p2Creature ? this.renderCreature(p2Creature, 1, i, isPendingTide) : '<span class="empty-slot">Empty</span>'}
             </div>
           </div>
           ${canPlay && isEmptyForActive ? `<button class="play-lane-btn" data-lane="${i}">Place Here</button>` : ''}
@@ -107,14 +129,20 @@ export class GameRenderer {
     return `<div class="board">${lanesHtml}</div>`;
   }
 
-  private renderCreature(creature: CreatureInstance): string {
+  private renderCreature(creature: CreatureInstance, playerIndex: number, lane: number, isTideTarget: boolean): string {
     const c = creature.card;
     const currentLife = c.life - creature.damage;
-    const keywords = c.keywords.length > 0 ? `<span class="creature-keywords">${c.keywords.join(', ')}</span>` : '';
+    const keywords = c.keywords.length > 0
+      ? `<span class="creature-keywords">${c.keywords.map(k =>
+          `<span class="keyword-tag" title="${KEYWORD_DESCRIPTIONS[k]}">${k}</span>`
+        ).join(' ')}</span>`
+      : '';
     const exhaustedClass = creature.exhausted ? 'exhausted' : '';
+    const tideClass = isTideTarget ? 'tide-target' : '';
 
     return `
-      <div class="creature-card ${exhaustedClass}">
+      <div class="creature-card ${exhaustedClass} ${tideClass}"
+           data-player-index="${playerIndex}" data-lane="${lane}">
         <div class="creature-name">${c.name}</div>
         <div class="creature-stats">${c.power} / ${currentLife}</div>
         ${keywords}
@@ -125,6 +153,15 @@ export class GameRenderer {
 
   private renderActiveHand(): string {
     const s = this.engine.state;
+    if (s.pendingTide) {
+      return `
+        <div class="hand-area">
+          <h3>Player ${s.activePlayerIndex + 1}'s Hand</h3>
+          <p class="hand-hint tide-hint">Waiting for Tide resolution — select a creature on the board to bounce</p>
+        </div>
+      `;
+    }
+
     const player = s.players[s.activePlayerIndex];
     const isInkPhase = s.currentPhase === Phase.Ink;
     const isPlayPhase = s.currentPhase === Phase.Play;
@@ -136,15 +173,22 @@ export class GameRenderer {
       const canPlay = isPlayPhase && card.cost <= this.engine.getAvailableInk();
       const isSelected = this.selectedCardIndex === i;
       const clickable = canInk || canPlay;
+      const richLabel = card.keywords.includes(Keyword.Rich)
+        ? `<div class="card-rich-label">+2 Ink</div>` : '';
 
       cardsHtml += `
-        <div class="hand-card ${clickable ? 'clickable' : ''} ${isSelected ? 'selected' : ''}"
+        <div class="hand-card ${clickable ? 'clickable' : ''} ${isSelected ? 'selected' : ''} ${!card.inkable ? 'uninkable' : ''}"
              data-card-index="${i}" data-can-ink="${canInk}" data-can-play="${canPlay}">
           <div class="card-cost">${card.cost}</div>
           <div class="card-name">${card.name}</div>
           <div class="card-stats">${card.power} / ${card.life}</div>
-          ${card.keywords.length > 0 ? `<div class="card-keywords">${card.keywords.join(', ')}</div>` : ''}
+          ${card.keywords.length > 0
+            ? `<div class="card-keywords">${card.keywords.map(k =>
+                `<span class="keyword-tag" title="${KEYWORD_DESCRIPTIONS[k]}">${k}</span>`
+              ).join(' ')}</div>`
+            : ''}
           ${!card.inkable ? '<div class="card-uninkable">Uninkable</div>' : ''}
+          ${richLabel}
         </div>
       `;
     });
@@ -153,7 +197,7 @@ export class GameRenderer {
       <div class="hand-area">
         <h3>Player ${s.activePlayerIndex + 1}'s Hand (${player.hand.length} cards)</h3>
         <div class="hand-cards">${cardsHtml}</div>
-        ${isInkPhase ? '<p class="hand-hint">Click a card to ink it</p>' : ''}
+        ${isInkPhase ? '<p class="hand-hint">Click a card to ink it (hover keywords for descriptions)</p>' : ''}
         ${isPlayPhase && this.selectedCardIndex === null ? '<p class="hand-hint">Click a card to select it, then click a lane</p>' : ''}
         ${isPlayPhase && this.selectedCardIndex !== null ? '<p class="hand-hint">Click a lane to place the creature, or click the card again to deselect</p>' : ''}
       </div>
@@ -163,6 +207,10 @@ export class GameRenderer {
   private renderActions(): string {
     const s = this.engine.state;
     const buttons: string[] = [];
+
+    if (s.pendingTide) {
+      return `<div class="actions"><p class="tide-action-hint">Click a creature on the board to resolve Tide</p></div>`;
+    }
 
     if (s.gameOver) {
       buttons.push(`<div class="game-over-message">Player ${(s.winner ?? 0) + 1} wins!</div>`);
@@ -218,6 +266,20 @@ export class GameRenderer {
         this.handleAction(action!);
       });
     });
+
+    // Tide targeting — clicks on creatures when Tide is pending
+    if (this.engine.state.pendingTide) {
+      this.app.querySelectorAll('.tide-target').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLElement;
+          const playerIndex = parseInt(target.dataset.playerIndex!, 10) as 0 | 1;
+          const lane = parseInt(target.dataset.lane!, 10);
+          this.engine.resolveTide(playerIndex, lane);
+          this.render();
+        });
+      });
+      return; // Don't bind hand/lane events while Tide is pending
+    }
 
     // Hand cards
     this.app.querySelectorAll('.hand-card').forEach(card => {

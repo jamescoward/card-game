@@ -24,8 +24,8 @@ export const DECKS: Record<Exclude<Faction, 'Neutral'>, DeckInfo> = {
     id: 'Ember', name: 'Ember Horde', art: '🔥', color: '#ff5a36',
     blurb: 'Aggro. Cheap hitters, burn and Trample. Win fast or burn out.',
     cards: list([
-      ['goblin', 2], ['ember_imp', 2], ['raider', 2], ['bomber', 2], ['hellhound', 2],
-      ['imp_caller', 2], ['phoenix', 2], ['inferno', 1], ['spark', 2], ['war_drums', 1],
+      ['goblin', 3], ['ember_imp', 3], ['raider', 2], ['bomber', 1], ['hellhound', 2],
+      ['imp_caller', 2], ['phoenix', 2], ['inferno', 1], ['spark', 2],
       ['fireball', 1], ['fireblast', 1],
     ]),
   },

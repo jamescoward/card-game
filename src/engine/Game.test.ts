@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Game, RULES } from './Game';
-import { chooseAction, counterAttack } from './ai';
+import { chooseAction, counterAttack, shouldMulligan } from './ai';
 import { DECKS, DECK_IDS } from '../data/decks';
 import { COLLECTIBLE, card } from '../data/cards';
 import { TERRAINS } from '../data/terrains';
@@ -20,6 +20,9 @@ function setup(opts: { hand?: string[]; foeHand?: string[]; terrains?: string[];
   g.player(1).hand = [...(opts.foeHand ?? [])];
   g.player(0).ink = opts.ink ?? 10;
   g.player(1).ink = 10;
+  // Tests set up mid-game positions, so the opening redraw is gone.
+  g.player(0).canMulligan = false;
+  g.player(1).canMulligan = false;
   return g;
 }
 
@@ -69,6 +72,43 @@ describe('setup', () => {
       if (c.type === 'spell') expect(c.cast).toBeDefined();
       else expect(c.power + c.life).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('mulligan', () => {
+  it('redraws the same number of cards and keeps the deck at 20', () => {
+    const g = Game.create({ decks: [DECKS.Ember.cards, DECKS.Tide.cards], seed: 5, firstPlayer: 0 });
+    const size = g.player(0).hand.length;
+    expect(g.mulligan()).toBe(true);
+    expect(g.player(0).hand).toHaveLength(size);
+    expect(g.player(0).hand.length + g.player(0).deck.length).toBe(20);
+    expect(g.events.some(e => e.t === 'mulligan')).toBe(true);
+  });
+
+  it('can only be used once', () => {
+    const g = Game.create({ decks: [FILLER, FILLER], seed: 5 });
+    g.mulligan();
+    expect(g.mulligan()).toBe(false);
+  });
+
+  it('is lost once you ink, play or fight', () => {
+    const inked = setup({ hand: ['goblin', 'goblin'] });
+    inked.player(0).canMulligan = true;
+    inked.ink(0);
+    expect(inked.canMulligan()).toBe(false);
+    const played = setup({ hand: ['goblin'] });
+    played.player(0).canMulligan = true;
+    played.play(0, 0);
+    expect(played.canMulligan()).toBe(false);
+    const fought = Game.create({ decks: [FILLER, FILLER], seed: 5, firstPlayer: 0 });
+    fought.endTurn();
+    expect(fought.player(0).canMulligan).toBe(false);
+    expect(fought.canMulligan(1)).toBe(true);
+  });
+
+  it('only the active player can redraw', () => {
+    const g = Game.create({ decks: [FILLER, FILLER], seed: 5, firstPlayer: 0 });
+    expect(g.canMulligan(1)).toBe(false);
   });
 });
 
@@ -443,6 +483,13 @@ describe('AI', () => {
     expect(c.player(0).life).toBe(RULES.startingLife - 4);
     expect(g.player(0).life).toBe(RULES.startingLife);
     expect(g.active).toBe(0);
+  });
+
+  it('redraws hands with no early creature', () => {
+    const g = setup({ hand: ['dragon', 'kraken', 'fireball', 'giant', 'lich'] });
+    expect(shouldMulligan(g, 0)).toBe(true);
+    const keep = setup({ hand: ['goblin', 'dragon', 'fireball', 'raider', 'ogre'] });
+    expect(shouldMulligan(keep, 0)).toBe(false);
   });
 
   it('uses Keyword enums consistently', () => {

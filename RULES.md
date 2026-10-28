@@ -11,6 +11,7 @@ Reduce the enemy hero from **20 life** to **0**.
 - Each player has a **20-card** deck from one of four factions.
 - The first player draws **5** cards and skips their first draw. The second player starts with **6**.
 - The board deals **3 random terrains**, one per lane (see Terrains).
+- **Free redraw:** once per game, before your first ink, play or FIGHT, you may shuffle your hand back and draw the same number of cards.
 
 ## Your turn
 
@@ -80,4 +81,13 @@ Neutral cards appear as Gauntlet rewards.
 
 ## Balance
 
-`npm run sim` plays AI-vs-AI games for every faction pairing and reports win rates, first-player advantage and game length. At the time of writing every faction sits between about 47% and 56%, and first-player win rate is about 52%.
+`npm run sim` plays AI-vs-AI games for every faction pairing and reports:
+
+- the matchup matrix and overall faction win rates;
+- first-player win rate, game length, Storm frequency, redraw rate and how often each deck opens with no 1–2 cost creature;
+- per-card impact: the owner's win rate in games where the card was played, compared with the faction's overall win rate;
+- per-terrain swings for each faction.
+
+Card impact is biased: expensive cards only get played in games that last, and pump spells get played when you're already ahead. Treat it as a pointer, not a verdict.
+
+At the time of writing every faction sits between 47% and 55%, and first-player win rate is about 52%.

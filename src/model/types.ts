@@ -59,6 +59,8 @@ export interface PlayerState {
   /** One-turn ink (e.g. Crystal Mine). */
   bonusInk: number;
   hasInked: boolean;
+  /** May still redraw the opening hand (until the first ink, play or FIGHT). */
+  canMulligan: boolean;
   lanes: (Unit | null)[];
 }
 
@@ -92,6 +94,7 @@ export interface UnitView {
 export type GameEvent =
   | { t: 'turnStart'; p: PlayerIndex; round: number }
   | { t: 'draw'; p: PlayerIndex; cardId: string }
+  | { t: 'mulligan'; p: PlayerIndex }
   | { t: 'burn'; p: PlayerIndex; cardId: string }
   | { t: 'ink'; p: PlayerIndex; cardId: string; ink: number }
   | { t: 'gainInk'; p: PlayerIndex; amount: number }
@@ -117,4 +120,5 @@ export interface LogEntry {
 export type Action =
   | { type: 'ink'; hand: number }
   | { type: 'play'; hand: number; lane?: number; target?: UnitRef }
+  | { type: 'mulligan' }
   | { type: 'end' };

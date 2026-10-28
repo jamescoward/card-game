@@ -222,8 +222,11 @@ export class Battle {
 
     const lethal = foeIncoming >= g.player(this.foe).life && foeIncoming > 0;
     const canFight = this.myTurn;
+    const redraw = canFight && g.canMulligan(this.viewer)
+      ? '<button class="btn redraw-btn" data-act="mulligan">🔄<small>Redraw<br>hand</small></button>' : '';
     return `
       ${hero}
+      ${redraw}
       <button class="fight-btn ${canFight ? '' : 'disabled'} ${lethal ? 'lethal' : ''} ${canFight && !this.hasUsefulMoves() ? 'nudge' : ''}" data-act="fight">
         <span>${lethal ? 'LETHAL!' : 'FIGHT'}</span>
         <small>${canFight ? (foeIncoming > 0 ? `⚔ ${foeIncoming} to face` : 'end turn') : this.game.over ? '' : 'enemy turn'}</small>
@@ -260,6 +263,7 @@ export class Battle {
       }
       return 'Tap <b>Cast</b> to play it';
     }
+    if (g.canMulligan(this.viewer)) return 'Bad start? <b>🔄 Redraw</b> your hand once, for free';
     if (!this.me.hasInked && this.me.hand.some((_, i) => g.canInk(i)) && this.me.ink < 6) {
       return '💧 Tap a card and <b>Ink it</b> to grow your ink (1 per turn)';
     }
@@ -484,6 +488,10 @@ export class Battle {
         return;
       case 'cast':
         if (i !== null) void this.act(() => this.game.play(i));
+        return;
+      case 'mulligan':
+        this.selected = null;
+        void this.act(() => this.game.mulligan());
         return;
       case 'fight':
         this.noteMistakes();
@@ -750,6 +758,20 @@ export class Battle {
         pulse(this.el.querySelector('.battle'), 'lightning', 700);
         sfx('storm');
         await beat(800);
+        return;
+      }
+      case 'mulligan': {
+        if (e.p === this.viewer) {
+          this.seenHand = 0;
+          const hand = this.el.querySelector('.hand');
+          if (hand) hand.innerHTML = this.handHtml();
+          this.seenHand = this.me.hand.length;
+          sfx('bounce');
+          await beat(500);
+        } else {
+          toast(`${this.cfg.names[e.p]} redrew their hand 🔄`);
+          await beat(600);
+        }
         return;
       }
       case 'draw':

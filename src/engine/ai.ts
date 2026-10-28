@@ -12,6 +12,7 @@ export type Difficulty = 'easy' | 'normal' | 'hard';
  */
 export function chooseAction(g: Game, difficulty: Difficulty = 'normal', rand: () => number = Math.random): Action {
   const me = g.active;
+  if (difficulty !== 'easy' && g.canMulligan(me) && shouldMulligan(g, me)) return { type: 'mulligan' };
   const actions = g.legalActions();
   if (actions.length === 1) return actions[0];
 
@@ -60,6 +61,14 @@ export function chooseAction(g: Game, difficulty: Difficulty = 'normal', rand: (
   const end = scored.find(x => x.a.type === 'end')!;
   // Require a small improvement to bother acting (avoids pointless overwrites).
   return best.s > end.s + 0.05 ? best.a : end.a;
+}
+
+/** Redraw hands with no early creature, or too many expensive cards. */
+export function shouldMulligan(g: Game, p: PlayerIndex): boolean {
+  const hand = g.player(p).hand.map(card);
+  const early = hand.some(c => c.type === 'creature' && c.cost <= 2);
+  const clunky = hand.filter(c => c.cost >= 4).length >= 3;
+  return !early || clunky;
 }
 
 function scoreAction(g: Game, a: Action, me: PlayerIndex, careless = false): number {

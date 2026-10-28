@@ -1267,6 +1267,21 @@ h1, h2, .btn, .logo {
   white-space: nowrap;
 }
 
+.redraw-btn {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 1.3rem;
+  line-height: 1;
+  background: linear-gradient(180deg, #5ac2ff, #2a83d0);
+  border-color: #9ddcff;
+}
+
+.redraw-btn small {
+  font-size: 0.65rem;
+  line-height: 1.1;
+}
+
 .ink-btn {
   background: linear-gradient(180deg, #5ac2ff, #2a83d0);
   border-color: #9ddcff;

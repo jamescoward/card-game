@@ -784,6 +784,35 @@ h1, h2, .btn, .logo {
   animation: bob 1s ease-in-out infinite;
 }
 
+.threat {
+  margin-left: 4px;
+  font-family: var(--display);
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #5a3a00;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.threat.lethal {
+  background: var(--red);
+  border-color: #ffb3ba;
+  color: white;
+  animation: heartbeat 0.9s infinite;
+}
+
+.result .tip {
+  text-align: left;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #ffd23f1a;
+  border: 1px solid #ffd23f55;
+}
+
 .incoming.lethal {
   background: var(--gold);
   color: #3a2500;
@@ -1236,6 +1265,21 @@ h1, h2, .btn, .logo {
   font-size: 0.9rem;
   border-radius: 10px;
   white-space: nowrap;
+}
+
+.redraw-btn {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 1.3rem;
+  line-height: 1;
+  background: linear-gradient(180deg, #5ac2ff, #2a83d0);
+  border-color: #9ddcff;
+}
+
+.redraw-btn small {
+  font-size: 0.65rem;
+  line-height: 1.1;
 }
 
 .ink-btn {

@@ -12,17 +12,19 @@ export type Difficulty = 'easy' | 'normal' | 'hard';
  */
 export function chooseAction(g: Game, difficulty: Difficulty = 'normal', rand: () => number = Math.random): Action {
   const me = g.active;
+  if (difficulty !== 'easy' && g.canMulligan(me) && shouldMulligan(g, me)) return { type: 'mulligan' };
   const actions = g.legalActions();
   if (actions.length === 1) return actions[0];
 
-  if (difficulty === 'easy' && rand() < 0.25) {
+  if (difficulty === 'easy' && rand() < 0.4) {
     // Sloppy: sometimes do something random, sometimes just stop.
     const nonEnd = actions.filter(a => a.type !== 'end');
     if (rand() < 0.3 || nonEnd.length === 0) return { type: 'end' };
     return nonEnd[Math.floor(rand() * nonEnd.length)];
   }
 
-  const scored = actions.map(a => ({ a, s: scoreAction(g, a, me) }));
+  const careless = difficulty === 'easy';
+  const scored = actions.map(a => ({ a, s: scoreAction(g, a, me, careless) }));
 
   // Inking is only worth it for what it enables: score each ink choice by the
   // best play it unlocks this turn.
@@ -31,11 +33,11 @@ export function chooseAction(g: Game, difficulty: Difficulty = 'normal', rand: (
     const c = g.clone();
     c.apply(x.a);
     for (const b of c.legalActions()) {
-      if (b.type === 'play') x.s = Math.max(x.s, scoreAction(c, b, me));
+      if (b.type === 'play') x.s = Math.max(x.s, scoreAction(c, b, me, careless));
     }
   }
 
-  if (difficulty === 'easy') for (const x of scored) x.s += (rand() - 0.5) * 6;
+  if (difficulty === 'easy') for (const x of scored) x.s += (rand() - 0.5) * 10;
 
   if (difficulty === 'hard') {
     // Two-step search on the most promising actions: value = best follow-up.
@@ -61,23 +63,39 @@ export function chooseAction(g: Game, difficulty: Difficulty = 'normal', rand: (
   return best.s > end.s + 0.05 ? best.a : end.a;
 }
 
-function scoreAction(g: Game, a: Action, me: PlayerIndex): number {
+/** Redraw hands with no early creature, or too many expensive cards. */
+export function shouldMulligan(g: Game, p: PlayerIndex): boolean {
+  const hand = g.player(p).hand.map(card);
+  const early = hand.some(c => c.type === 'creature' && c.cost <= 2);
+  const clunky = hand.filter(c => c.cost >= 4).length >= 3;
+  return !early || clunky;
+}
+
+function scoreAction(g: Game, a: Action, me: PlayerIndex, careless = false): number {
   const c = g.clone();
   if (a.type !== 'end') c.apply(a);
-  return forecast(c, me);
+  return forecast(c, me, !careless);
 }
 
 /** Score the position after this turn's combat and the opponent's likely counter-attack. */
-export function forecast(g: Game, me: PlayerIndex): number {
+export function forecast(g: Game, me: PlayerIndex, withCounter = true): number {
   if (g.over) return evaluate(g, me);
   const afterMine = g.clone();
   afterMine.fight();
   if (!afterMine.over) afterMine.endOfTurn();
   const mine = evaluate(afterMine, me);
-  if (afterMine.over) return mine;
+  if (afterMine.over || !withCounter) return mine;
 
-  // Rough counter-attack: opponent's current board swings back without new plays.
-  const counter = afterMine.clone();
+  const theirs = evaluate(counterAttack(afterMine), me);
+  return mine * 0.5 + theirs * 0.5;
+}
+
+/**
+ * Rough counter-attack: the opponent's current board swings back without new
+ * plays. Returns a new game; the input is not modified.
+ */
+export function counterAttack(g: Game): Game {
+  const counter = g.clone();
   const foe = counter.other(counter.active);
   counter.state.active = foe;
   for (const u of counter.unitsOf(foe)) {
@@ -85,8 +103,7 @@ export function forecast(g: Game, me: PlayerIndex): number {
     else u.exhausted = false;
   }
   counter.fight();
-  const theirs = evaluate(counter, me);
-  return mine * 0.5 + theirs * 0.5;
+  return counter;
 }
 
 function lifeValue(life: number): number {

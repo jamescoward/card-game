@@ -91,6 +91,7 @@ export class Game {
       inkSpent: 0,
       bonusInk: 0,
       hasInked: false,
+      canMulligan: true,
       lanes: [null, null, null],
     };
   }
@@ -309,6 +310,7 @@ export class Game {
   apply(a: Action): boolean {
     if (a.type === 'ink') return this.ink(a.hand);
     if (a.type === 'play') return this.play(a.hand, a.lane, a.target);
+    if (a.type === 'mulligan') return this.mulligan();
     return this.endTurn();
   }
 
@@ -316,10 +318,30 @@ export class Game {
   // Player actions
   // -------------------------------------------------------------------------
 
+  canMulligan(p: PlayerIndex = this.state.active): boolean {
+    return !this.over && p === this.state.active && this.player(p).canMulligan;
+  }
+
+  /** Shuffle your opening hand back and draw the same number of cards. Once per game. */
+  mulligan(): boolean {
+    if (!this.canMulligan()) return false;
+    const p = this.state.active;
+    const pl = this.player(p);
+    const n = pl.hand.length;
+    pl.deck = this.shuffle([...pl.deck, ...pl.hand]);
+    pl.hand = [];
+    for (let i = 0; i < n; i++) this.drawQuiet(p);
+    pl.canMulligan = false;
+    this.emit({ t: 'mulligan', p });
+    this.say(p, 'redrew their opening hand 🔄');
+    return true;
+  }
+
   ink(handIndex: number): boolean {
     if (!this.canInk(handIndex)) return false;
     const p = this.state.active;
     const pl = this.player(p);
+    pl.canMulligan = false;
     const [id] = pl.hand.splice(handIndex, 1);
     pl.ink += 1;
     pl.hasInked = true;
@@ -337,6 +359,7 @@ export class Game {
     const pl = this.player(p);
     const id = pl.hand[handIndex];
     const def = card(id);
+    pl.canMulligan = false;
     pl.inkSpent += this.costOf(id);
     pl.hand.splice(handIndex, 1);
     this.emit({ t: 'play', p, cardId: id, lane, target });
@@ -368,6 +391,7 @@ export class Game {
   /** Fight, run end-of-turn effects, then start the opponent's turn. */
   endTurn(): boolean {
     if (this.over) return false;
+    this.player(this.state.active).canMulligan = false;
     this.fight();
     if (this.over) return true;
     this.endOfTurn();

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Game, RULES } from './Game';
-import { chooseAction } from './ai';
+import { chooseAction, counterAttack } from './ai';
 import { DECKS, DECK_IDS } from '../data/decks';
 import { COLLECTIBLE, card } from '../data/cards';
 import { TERRAINS } from '../data/terrains';
@@ -434,6 +434,15 @@ describe('AI', () => {
   it('plays a creature into an empty board rather than passing', () => {
     const g = setup({ hand: ['ogre'], terrains: PLAIN, ink: 3 });
     expect(chooseAction(g, 'normal').type).toBe('play');
+  });
+
+  it('counterAttack predicts the enemy swing without touching the real game', () => {
+    const g = setup({ terrains: PLAIN });
+    place(g, 1, 'ogre', 0);
+    const c = counterAttack(g);
+    expect(c.player(0).life).toBe(RULES.startingLife - 4);
+    expect(g.player(0).life).toBe(RULES.startingLife);
+    expect(g.active).toBe(0);
   });
 
   it('uses Keyword enums consistently', () => {

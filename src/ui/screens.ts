@@ -114,7 +114,29 @@ function factionTiles(selected: DeckFaction | null, group: string): string {
 // Quick battle
 // ---------------------------------------------------------------------------
 
-let quickChoice: { me: DeckFaction; foe: DeckFaction | 'random'; diff: Difficulty } = { me: 'Ember', foe: 'random', diff: 'normal' };
+function loadDifficulty(): Difficulty {
+  try {
+    const d = localStorage.getItem('inkbrawl.difficulty');
+    if (d === 'easy' || d === 'normal' || d === 'hard') return d;
+  } catch {
+    /* storage unavailable */
+  }
+  return 'easy';
+}
+
+function saveDifficulty(d: Difficulty) {
+  try {
+    localStorage.setItem('inkbrawl.difficulty', d);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+const EASIER: Record<Difficulty, Difficulty | null> = { hard: 'normal', normal: 'easy', easy: null };
+
+let quickChoice: { me: DeckFaction; foe: DeckFaction | 'random'; diff: Difficulty } = { me: 'Ember', foe: 'random', diff: loadDifficulty() };
+/** Consecutive Quick Battle losses, used to offer an easier opponent. */
+let lossStreak = 0;
 
 function showQuickSetup() {
   const q = quickChoice;
@@ -138,7 +160,7 @@ function showQuickSetup() {
     back: () => showMenu(),
     me: el => { q.me = el.dataset.val as DeckFaction; showQuickSetup(); },
     foe: el => { q.foe = el.dataset.val as DeckFaction | 'random'; showQuickSetup(); },
-    diff: el => { q.diff = el.dataset.val as Difficulty; showQuickSetup(); },
+    diff: el => { q.diff = el.dataset.val as Difficulty; saveDifficulty(q.diff); showQuickSetup(); },
     start: () => startQuick(),
   });
 }
@@ -155,15 +177,34 @@ function startQuick() {
     difficulty: q.diff,
     onExit: () => showMenu(),
     onResult: winner => {
-      addRecord(winner === 0);
+      const won = winner === 0;
+      addRecord(won);
+      lossStreak = won ? 0 : lossStreak + 1;
+      const easier = EASIER[q.diff];
+      const actions = [
+        { label: '🔁 Rematch', primary: true, run: () => startQuick() },
+        { label: 'Change decks', run: () => showQuickSetup() },
+        { label: 'Menu', run: () => showMenu() },
+      ];
+      if (!won && lossStreak >= 2 && easier) {
+        actions.unshift({
+          label: `😊 Rematch on ${easier[0].toUpperCase()}${easier.slice(1)}`,
+          primary: true,
+          run: () => {
+            q.diff = easier;
+            saveDifficulty(easier);
+            lossStreak = 0;
+            startQuick();
+          },
+        });
+        actions[1].primary = false;
+      }
       return {
-        title: winner === 0 ? 'Victory!' : 'Defeat',
-        subtitle: winner === 0 ? `${rival.name} is toast.` : `"${rival.taunt}"`,
-        actions: [
-          { label: '🔁 Rematch', primary: true, run: () => startQuick() },
-          { label: 'Change decks', run: () => showQuickSetup() },
-          { label: 'Menu', run: () => showMenu() },
-        ],
+        title: won ? 'Victory!' : 'Defeat',
+        subtitle: won
+          ? `${rival.name} is toast.${q.diff !== 'hard' && lossStreak === 0 ? ' Ready for a harder fight?' : ''}`
+          : `"${rival.taunt}"`,
+        actions,
       };
     },
   });

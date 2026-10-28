@@ -1,7 +1,7 @@
 import { card } from '../data/cards';
 import { DECKS, FACTION_COLORS } from '../data/decks';
 import { terrain } from '../data/terrains';
-import { chooseAction, Difficulty } from '../engine/ai';
+import { chooseAction, counterAttack, Difficulty } from '../engine/ai';
 import { Game, RULES } from '../engine/Game';
 import { Faction, GameEvent, PlayerIndex, UnitRef } from '../model/types';
 import { isMuted, setMuted, sfx, vibrate } from './audio';
@@ -34,7 +34,7 @@ type Overlay =
   | { kind: 'pause' }
   | { kind: 'log' }
   | { kind: 'curtain' }
-  | { kind: 'result'; title: string; subtitle: string; actions: ResultAction[]; won: boolean }
+  | { kind: 'result'; title: string; subtitle: string; actions: ResultAction[]; won: boolean; tip?: string }
   | null;
 
 const factionArt = (f: Faction) => (f === 'Neutral' ? '⚔️' : DECKS[f].art);
@@ -48,6 +48,8 @@ export class Battle {
   private overlay: Overlay = null;
   private seenHand = 0;
   private resultActions: ResultAction[] = [];
+  /** Habits worth coaching on after a loss. */
+  private mistakes = { skippedInk: 0, wastedInk: 0, ignoredThreat: 0 };
 
   constructor(root: HTMLElement, private cfg: BattleConfig) {
     const first: PlayerIndex = Math.random() < 0.5 ? 0 : 1;
@@ -112,8 +114,8 @@ export class Battle {
         ${this.topBar()}
         ${this.heroRow(this.foe, fc.heroDmg)}
         <div class="field">${[0, 1, 2].map(l => this.laneHtml(l, fc.doomed)).join('')}</div>
-        <div class="dock">${this.dockHtml(fc.heroDmg)}</div>
-        <div class="hint">${this.hint()}</div>
+        <div class="dock">${this.dockHtml(fc.heroDmg, fc.threat)}</div>
+        <div class="hint">${this.hint(fc.threat)}</div>
         <div class="hand">${this.handHtml()}</div>
         ${this.overlayHtml()}
       </div>`;
@@ -185,14 +187,15 @@ export class Battle {
       </div>`;
   }
 
-  private dockHtml(foeIncoming: number): string {
+  private dockHtml(foeIncoming: number, threat: number): string {
     const g = this.game;
     const pl = this.me;
     const sel = this.selectedCard();
     const hero = `
       <div class="hero my-hero ${g.active === this.viewer ? 'active' : ''}" data-hero="${this.viewer}" style="--fc:${FACTION_COLORS[this.cfg.factions[this.viewer]]}">
         <div class="portrait">${factionArt(this.cfg.factions[this.viewer])}</div>
-        <div class="life ${pl.life <= 5 ? 'low' : ''}">❤️<b>${pl.life}</b></div>
+        <div class="life ${pl.life <= 5 ? 'low' : ''}">❤️<b>${pl.life}</b>${threat > 0 && this.myTurn
+          ? `<span class="threat ${threat >= pl.life ? 'lethal' : ''}" title="The enemy board hits you for ${threat} next turn unless you block">⚠️-${threat}</span>` : ''}</div>
         <div class="ink-pips" title="Ink available / total">${this.inkPips()}</div>
       </div>`;
 
@@ -242,7 +245,7 @@ export class Battle {
     return g.legalActions().some(a => a.type === 'play');
   }
 
-  private hint(): string {
+  private hint(threat = 0): string {
     const g = this.game;
     if (g.over) return '';
     if (this.busy && this.isAiTurn) return '<span class="thinking">Enemy is thinking<i>.</i><i>.</i><i>.</i></span>';
@@ -260,7 +263,10 @@ export class Battle {
     if (!this.me.hasInked && this.me.hand.some((_, i) => g.canInk(i)) && this.me.ink < 6) {
       return '💧 Tap a card and <b>Ink it</b> to grow your ink (1 per turn)';
     }
-    if (g.legalActions().some(a => a.type === 'play')) return 'Tap a glowing card to play it';
+    const canPlay = g.legalActions().some(a => a.type === 'play');
+    if (threat >= this.me.life) return '⚠️ <b>Lethal</b> incoming next turn — block or race!';
+    if (threat >= 4 && canPlay) return `⚠️ Enemy hits you for <b>${threat}</b> next turn — block their lanes`;
+    if (canPlay) return 'Tap a glowing card to play it';
     return 'All set — hit <b>FIGHT</b>!';
   }
 
@@ -319,15 +325,20 @@ export class Battle {
           <div class="overlay result ${o.won ? 'won' : 'lost'}"><div class="panel">
             <h1>${o.title}</h1>
             <p>${o.subtitle}</p>
+            ${o.tip ? `<div class="tip">💡 ${o.tip}</div>` : ''}
             <div class="result-btns">${o.actions.map((a, i) => `<button class="btn ${a.primary ? 'primary' : ''}" data-result="${i}">${a.label}</button>`).join('')}</div>
           </div></div>`;
     }
   }
 
   /** Predict this turn's combat so the player can see what FIGHT will do. */
-  private forecast(): { heroDmg: number; doomed: Set<number> } {
+  /**
+   * Predict this turn's combat (heroDmg, doomed) and the enemy's swing back
+   * next turn if their board stays as it is (threat).
+   */
+  private forecast(): { heroDmg: number; doomed: Set<number>; threat: number } {
     const g = this.game;
-    const none = { heroDmg: 0, doomed: new Set<number>() };
+    const none = { heroDmg: 0, doomed: new Set<number>(), threat: 0 };
     if (g.over || g.active !== this.viewer) return none;
     const c = g.clone();
     const before = c.player(this.foe).life;
@@ -335,7 +346,13 @@ export class Battle {
     c.fight();
     if (!c.over) c.endOfTurn();
     const alive = new Set([...c.unitsOf(0), ...c.unitsOf(1)].map(u => u.uid));
-    return { heroDmg: Math.max(0, before - c.player(this.foe).life), doomed: new Set(uids.filter(u => !alive.has(u))) };
+    const myLife = c.player(this.viewer).life;
+    const threat = c.over ? 0 : Math.max(0, myLife - counterAttack(c).player(this.viewer).life);
+    return {
+      heroDmg: Math.max(0, before - c.player(this.foe).life),
+      doomed: new Set(uids.filter(u => !alive.has(u))),
+      threat,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -469,10 +486,39 @@ export class Battle {
         if (i !== null) void this.act(() => this.game.play(i));
         return;
       case 'fight':
+        this.noteMistakes();
         this.selected = null;
         void this.act(() => this.game.endTurn());
         return;
     }
+  }
+
+  private noteMistakes() {
+    const g = this.game;
+    const pl = this.me;
+    if (!pl.hasInked && pl.ink < 5 && pl.hand.some((_, i) => g.canInk(i))) this.mistakes.skippedInk++;
+    if (g.availableInk() >= 2 && g.legalActions().some(a => a.type === 'play')) this.mistakes.wastedInk++;
+    const threat = this.forecast().threat;
+    if (threat >= 5 && g.legalActions().some(a => a.type === 'play' && a.lane !== undefined)) this.mistakes.ignoredThreat++;
+  }
+
+  /** One coaching tip for the player who just lost, based on how they played. */
+  private coachingTip(): string {
+    const m = this.mistakes;
+    const worst = Math.max(m.skippedInk, m.wastedInk, m.ignoredThreat);
+    if (worst >= 2) {
+      if (m.skippedInk === worst) return `You skipped inking ${m.skippedInk} times early on. Ink a card every turn until you have ~5 💧 — the AI always does.`;
+      if (m.wastedInk === worst) return `You ended ${m.wastedInk} turns with unspent ink and cards you could play. Use it or lose it!`;
+      return 'The ⚠️ number next to your life shows what the enemy will hit you for next turn. Put creatures in front of their attackers to block.';
+    }
+    const tips = [
+      'Empty enemy lanes are free damage. Put creatures where the enemy isn\'t.',
+      'Check the terrains before you play — an Arena doubles face damage, a Volcano melts small creatures.',
+      'Defenders strike back. Attack into creatures you can kill without dying, or go around them.',
+      'Flying creatures ignore ground blockers. Answer them with your own flyers or spells.',
+      'Cheap cards make great ink late in the game. Keep the bombs.',
+    ];
+    return tips[Math.floor(Math.random() * tips.length)];
   }
 
   private async act(fn: () => boolean) {
@@ -742,7 +788,8 @@ export class Battle {
       sfx('lose');
     }
     this.resultActions = res.actions;
-    this.overlay = { kind: 'result', title: res.title, subtitle: res.subtitle, actions: res.actions, won };
+    const tip = !won ? this.coachingTip() : undefined;
+    this.overlay = { kind: 'result', title: res.title, subtitle: res.subtitle, actions: res.actions, won, tip };
     this.render();
   }
 }

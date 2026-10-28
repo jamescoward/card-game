@@ -185,6 +185,22 @@
   - Overwriting does not affect the opposing creature in that lane
   - Cannot overwrite the opponent's creatures
 
+## Sprint 4 — Make It Fun (Inkbrawl) ✅
+
+**Goal:** Playtests found the game unbalanced (Cleave-heavy aggro dominated) and not much fun (hotseat only, five phase buttons per turn, vanilla cards, anticlimactic turn-6 life comparison). Rebuilt as **Inkbrawl**.
+
+- [x] New data-driven engine (`src/engine/Game.ts`): cloneable state, seeded RNG, event stream for animations
+- [x] One-button turns: auto draw, ink any time (once per turn), play, FIGHT
+- [x] Four factions (Ember, Tide, Wild, Bone) plus neutrals; ~50 cards with on-play, death, ink, growth and aura effects; spells
+- [x] Keywords: Flying, Tough, Shield, Lifesteal, Deadly, Trample, Slow (Cleave/Tide/Rich became card effects; Evasion became Flying)
+- [x] 12 random lane terrains, 3 per game
+- [x] Storm replaces the 6-turn limit; second player gets +1 card
+- [x] AI opponent (Easy/Normal/Hard) with combat look-ahead
+- [x] Balance simulator (`npm run sim`), tuned to ~47–56% faction win rates and ~52% first-player win rate
+- [x] Mobile-first UI: combat preview, attack/damage/death animations, synthesized sound, haptics
+- [x] Gauntlet roguelike mode with card drafting and deck trimming; Pass & Play with hand-hiding curtain; How to Play; card gallery
+- [x] Removed playtest toggles (Expendable inking, Attacker-only combat)
+
 ---
 
 ## Future Ideas
@@ -200,3 +216,4 @@ See [IDEAS.md](./IDEAS.md) for longer-term concepts that aren't yet on the roadm
 | **1**  | 1–6    | Playable two-player hotseat game with Goblin cards, both inking modes, both combat modes, 3-lane combat, deployed to GitHub Pages |
 | **2**  | 7–9    | All 6 keywords working, 15+ card pool, pre-built decks, deck selection, improved UI |
 | **3**  | 10     | Balance fixes (first-player draw, Tough rework) and lane overwriting |
+| **4**  | —      | Inkbrawl: new engine, factions, terrains, AI, Gauntlet, mobile UI |

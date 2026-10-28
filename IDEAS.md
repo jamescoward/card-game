@@ -1,5 +1,7 @@
 # Ideas & Future Concepts
 
+> Sprint 4 shipped several of these: spells, Lifesteal, overwriting, Cleave nerf (now "deal 2" on Raider; full destroy only on the 5-cost Lich King), death effects (Echo-like Skeleton/Phoenix), lane-control (King's Hill terrain) and setup cards (Sapling, Hydra). Still open: second play step, Taunt, dominance points.
+
 Dumping ground for design ideas that aren't on the immediate roadmap.
 
 ---

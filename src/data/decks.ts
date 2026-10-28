@@ -1,67 +1,69 @@
-import { Card } from '../model/types';
-import {
-  GOBLIN, SCOUT, SENTINEL,
-  ORC_WARRIOR, RAIDER, TIDEWALKER, MERCHANT,
-  OGRE, SHADOW, BULWARK, RECRUITER,
-  WAR_CHIEF, ASSASSIN, TEMPEST, LUMBERING_GIANT,
-  DRAGON, HYDRA,
-} from './cards';
+import { Faction } from '../model/types';
+import { card } from './cards';
 
-function copies(card: Card, count: number): Card[] {
-  return Array.from({ length: count }, () => ({ ...card }));
+export interface DeckInfo {
+  id: Faction;
+  name: string;
+  art: string;
+  color: string;
+  blurb: string;
+  cards: string[];
 }
 
-// Aggro: fast, cheap creatures; Cleave and Evasion to punch through
-export const AGGRO_DECK: Card[] = [
-  ...copies(GOBLIN, 4),         // 1-cost 1/1
-  ...copies(SCOUT, 4),          // 1-cost 1/1 Evasion
-  ...copies(RAIDER, 4),         // 2-cost 2/1 Cleave
-  ...copies(ORC_WARRIOR, 4),    // 2-cost 2/2
-  ...copies(ASSASSIN, 2),       // 4-cost 3/1 Cleave
-  ...copies(SHADOW, 2),         // 3-cost 2/2 Evasion
-  ...copies(DRAGON, 2),         // 5-cost 4/4 uninkable
-  ...copies(OGRE, 2),           // 3-cost 3/2
-]; // 24 → trim to 20
-// Ensure exactly 20 cards
-export const AGGRO_DECK_20: Card[] = [
-  ...copies(GOBLIN, 4),
-  ...copies(SCOUT, 4),
-  ...copies(RAIDER, 4),
-  ...copies(ORC_WARRIOR, 4),
-  ...copies(ASSASSIN, 2),
-  ...copies(SHADOW, 2),
-];
+function list(entries: [string, number][]): string[] {
+  const out: string[] = [];
+  for (const [id, n] of entries) {
+    card(id); // validate
+    for (let i = 0; i < n; i++) out.push(id);
+  }
+  return out;
+}
 
-// Midrange: balanced mix of costs and keywords
-export const MIDRANGE_DECK: Card[] = [
-  ...copies(GOBLIN, 2),           // 1-cost 1/1
-  ...copies(SENTINEL, 2),         // 1-cost 0/2 Tough
-  ...copies(ORC_WARRIOR, 4),      // 2-cost 2/2
-  ...copies(TIDEWALKER, 2),       // 2-cost 1/2 Tide
-  ...copies(OGRE, 2),             // 3-cost 3/2
-  ...copies(BULWARK, 2),          // 3-cost 1/3 Tough
-  ...copies(WAR_CHIEF, 2),        // 4-cost 3/3
-  ...copies(TEMPEST, 2),          // 4-cost 2/3 Tide
-  ...copies(LUMBERING_GIANT, 2),  // 4-cost 4/3 Slow
-];
-
-// Control: defensive, Tough creatures and bounce with Tide; Rich for ramp
-export const CONTROL_DECK: Card[] = [
-  ...copies(SENTINEL, 4),         // 1-cost 0/2 Tough
-  ...copies(MERCHANT, 2),         // 2-cost 1/1 Rich
-  ...copies(BULWARK, 4),          // 3-cost 1/3 Tough
-  ...copies(RECRUITER, 2),        // 3-cost 2/2 Rich
-  ...copies(WAR_CHIEF, 4),        // 4-cost 3/3
-  ...copies(TEMPEST, 2),          // 4-cost 2/3 Tide
-  ...copies(HYDRA, 2),            // 5-cost 3/5 Tough uninkable
-];
-
-export const DECK_CONFIGS: Record<string, { label: string; deck: Card[] }> = {
-  aggro: { label: 'Aggro (Fast & Aggressive)', deck: AGGRO_DECK_20 },
-  midrange: { label: 'Midrange (Balanced)', deck: MIDRANGE_DECK },
-  control: { label: 'Control (Defensive)', deck: CONTROL_DECK },
+export const DECKS: Record<Exclude<Faction, 'Neutral'>, DeckInfo> = {
+  Ember: {
+    id: 'Ember', name: 'Ember Horde', art: '🔥', color: '#ff5a36',
+    blurb: 'Aggro. Cheap hitters, burn and Trample. Win fast or burn out.',
+    cards: list([
+      ['goblin', 2], ['ember_imp', 2], ['raider', 2], ['bomber', 2], ['hellhound', 2],
+      ['imp_caller', 2], ['phoenix', 2], ['inferno', 1], ['spark', 2], ['war_drums', 1],
+      ['fireball', 1], ['fireblast', 1],
+    ]),
+  },
+  Tide: {
+    id: 'Tide', name: 'Tidecallers', art: '🌊', color: '#3aa0ff',
+    blurb: 'Tempo. Flyers, bounce, freeze and card draw.',
+    cards: list([
+      ['sprite', 2], ['tidewalker', 2], ['turtle', 2], ['mirror_mage', 2], ['storm_eagle', 2],
+      ['frost_giant', 2], ['siren', 1], ['kraken', 1], ['frost_bolt', 2], ['bubble', 1],
+      ['insight', 1], ['riptide', 2],
+    ]),
+  },
+  Wild: {
+    id: 'Wild', name: 'Wildgrove', art: '🌿', color: '#4cc96b',
+    blurb: 'Ramp. Creatures that grow, then giants that trample.',
+    cards: list([
+      ['sapling', 2], ['druid', 2], ['boar', 2], ['thornback', 2], ['bear', 2],
+      ['treant', 2], ['rhino', 2], ['hydra', 1], ['giant', 1], ['feast', 2],
+      ['wild_growth', 1], ['stampede', 1],
+    ]),
+  },
+  Bone: {
+    id: 'Bone', name: 'Bonecult', art: '💀', color: '#b06cff',
+    blurb: 'Sacrifice. Death triggers, Lifesteal, Deadly and Devour.',
+    cards: list([
+      ['skeleton', 2], ['rat', 2], ['bat', 2], ['ghoul', 2], ['necromancer', 2],
+      ['colossus', 2], ['wraith', 2], ['lich', 1], ['harvest', 1], ['drain', 2],
+      ['raise_dead', 1], ['plague', 1],
+    ]),
+  },
 };
 
-// Legacy defaults
-export const DEFAULT_DECK_1: Card[] = AGGRO_DECK_20.map(c => ({ ...c }));
-export const DEFAULT_DECK_2: Card[] = MIDRANGE_DECK.map(c => ({ ...c }));
+export const FACTION_COLORS: Record<Faction, string> = {
+  Ember: DECKS.Ember.color,
+  Tide: DECKS.Tide.color,
+  Wild: DECKS.Wild.color,
+  Bone: DECKS.Bone.color,
+  Neutral: '#c9b37e',
+};
+
+export const DECK_IDS = Object.keys(DECKS) as Exclude<Faction, 'Neutral'>[];
